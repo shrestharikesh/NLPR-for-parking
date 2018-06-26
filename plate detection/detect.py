@@ -17,6 +17,7 @@ def main():
     imgContours = np.zeros((height, width, 3), np.uint8)
     imgGrayscaleScene, imgThreshScene = Preprocess.preprocess(img)         # preprocess to get grayscale and threshold images
     
+    
 
 
     imgBlurred = cv2.GaussianBlur(img, (5,5), 0)		
