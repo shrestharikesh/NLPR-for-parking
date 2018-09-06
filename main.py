@@ -27,27 +27,28 @@ def cleanPlate(plate):
     # kernel = cv2.getStructuringElement(cv2.MORPH_CROSS, (3, 3))
     # thresh= cv2.dilate(gray, kernel, iterations=1)
 
-    _, thresh = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY)
-    im1, contours, hierarchy = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
 
-    if contours:
-        areas = [cv2.contourArea(c) for c in contours]
-        max_index = np.argmax(areas)
-
-        max_cnt = contours[max_index]
-        max_cntArea = areas[max_index]
-        x, y, w, h = cv2.boundingRect(max_cnt)
-
-        if not ratioCheck(max_cntArea, w, h):
-            return plate, None
-
-        cleaned_final = thresh[y:y + h, x:x + w]
-        cv2.imshow("Function Test",cleaned_final)
-        return cleaned_final, [x, y, w, h]
-
-    else:
-		
-        return plate, None
+# binarizing image
+    _,thresh = cv2.threshold(gray,127,255,cv2.THRESH_TOZERO)
+    # im1, contours, hierarchy = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    #
+    # if contours:
+    #     areas = [cv2.contourArea(c) for c in contours]
+    #     max_index = np.argmax(areas)
+    #
+    #     max_cnt = contours[max_index]
+    #     max_cntArea = areas[max_index]
+    #     x, y, w, h = cv2.boundingRect(max_cnt)
+    #
+    #     if not ratioCheck(max_cntArea, w, h):
+    #         return plate, None
+    #
+    #     cleaned_final = thresh[y:y + h, x:x + w]
+    #     cv2.imshow("Function Test",cleaned_final)
+    #     return cleaned_final, [x, y, w, h]
+    #
+    # else:
+    return thresh
 
 
 def extract_contours(threshold_img):
@@ -57,7 +58,7 @@ def extract_contours(threshold_img):
     cv2.imshow("Morphed", morph_img_threshold)
     cv2.waitKey(0)
 
-    im2, contours, hierarchy = cv2.findContours(morph_img_threshold, mode=cv2.RETR_EXTERNAL,
+    _, contours,_ = cv2.findContours(morph_img_threshold, mode=cv2.RETR_EXTERNAL,
                                                 method=cv2.CHAIN_APPROX_NONE)
     return contours
 
@@ -66,17 +67,15 @@ def ratioCheck(area, width, height):
     ratio = float(width) / float(height)
     if ratio < 1:
         ratio = 1 / ratio
-
     aspect = 4.7272
     min = 15 * aspect * 15  # minimum area
     max = 125 * aspect * 125  # maximum area
-
-    rmin = 3
-    rmax = 6
-
-    # if (area < min or area > max) or (ratio < rmin or ratio > rmax):
-    if (area < min or area > max):
+    rmin = 1.5
+    rmax = 2.5
+    if (area < min or area > max) or (ratio < rmin or ratio > rmax):
         return False
+    else:
+        print(ratio)
     return True
 
 
@@ -110,43 +109,56 @@ def cleanAndRead(img, contours):
         # cv2.drawContours(img,[box],0,(0,0,255),2)
         # cv2.imshow("img", img)
         # cv2.waitKey(0)
-        # ya samma thik xa
-        # rectangle detectgariraxa
+        
+     
+        #!!!!!!!!!!!!!!!!!!!!!rectangle detectgariraxa
 
         if validateRotationAndRatio(min_rect):
-            print("number plate huna sakxa!!!")
+            print("number plate ho but not accurate. machine learning launu parxa accurate result ko lagi")
             x, y, w, h = cv2.boundingRect(cnt)
             plate_img = img[y:y + h, x:x + w]
             # img = cv2.rectangle(plate_img,(x,y),(x+w,y+h),(0,255,0),2)
             cv2.imshow("Detected Plate", plate_img)
             cv2.waitKey(0)
-
-            # if digitexists(plate_img): #yo digitexists() function le digitpresent xa ki nai check garxa
             # 	count+=1
 
-            clean_plate, rect = cleanPlate(plate_img)
-            cv2.imshow("clean plate ", clean_plate)
-            print(rect)
-            if rect:
-                x1, y1, w1, h1 = rect
-                x, y, w, h = x + x1, y + y1, w1, h1
-                cv2.imshow("Cleaned Plate", clean_plate)
-                cv2.waitKey(0)
-                plate_im = Image.fromarray(clean_plate)
-                text = tess.image_to_string(plate_im, lang='nep')
-                print("Detected Text : ", text)
-                img = cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
-                cv2.imshow("Detected Plate", img)
-                cv2.waitKey(0)
+            clean_plate = cleanPlate(plate_img)
+           
+            # if rect:
+            #     x1, y1, w1, h1 = rect
+            # x, y, w, h = x + x1, y + y1, w1, h1
+            cv2.imshow("Cleaned Plate", clean_plate)
+            cv2.waitKey(0)
 
+
+# !!!!!!!!!!!!!ya chai plate lai text detection ko lagi patauna function thapna baki xa
+
+
+            # plate_im = Image.fromarray(clean_plate)
+            # text = tess.image_to_string(plate_im, lang='nep')
+            # print("Detected Text : ", text)
+            img = cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            cv2.imshow("Detected Plate", img)
+            cv2.waitKey(0)
+            return clean_plate
 
 # print "No. of final cont : " , count
-
+def segment(image):
+   
+    _, contours,_ = cv2.findContours(gray,cv2.RETR_LIST,cv2.CHAIN_APPROX_SIMPLE)
+    idx =0 
+    for cnt in contours:
+        idx += 1
+        x,y,w,h = cv2.boundingRect(cnt)
+        roi=image[y:y+h,x:x+w]
+        if(w>10 and h>10):
+            cv2.imwrite(str(idx) + '.jpg', roi)
 
 if __name__ == '__main__':
     print("DETECTING PLATE . . .")
     img = cv2.imread("img.jpg")
     threshold_img = preprocess(img)
     contours = extract_contours(threshold_img)
-
-    cleanAndRead(img, contours)
+    plate = cleanAndRead(img, contours)
+    gray=cv2.cvtColor(plate,cv2.COLOR_BW2GRAY)
+    segment(plate)
