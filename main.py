@@ -129,17 +129,17 @@ def cleanAndRead(img, contours):
             img = cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
             cv2.imshow("Detected Plate", img)
             cv2.waitKey(0)
-            return clean_plate
+            return clean_plate, plate_img
 
 # print "No. of final cont : " , count
-def segment(image):
+def segment(image, RGBimg):
     # gray=cv2.cvtColor(plate,cv2.COLOR_BW2GRAY)
     _, contours,_ = cv2.findContours(image,cv2.RETR_LIST,cv2.CHAIN_APPROX_SIMPLE)
     idx =0 
     for cnt in contours:
         idx += 1
         x,y,w,h = cv2.boundingRect(cnt)
-        roi=image[y:y+h,x:x+w]
+        roi=RGBimg[y:y+h,x:x+w]
         if(w>10 and h>10):
             cv2.imwrite(str(idx) + '.jpg', roi)
 
@@ -148,6 +148,6 @@ if __name__ == '__main__':
     img = cv2.imread("img.jpg")
     threshold_img = preprocess(img)
     contours = extract_contours(threshold_img)
-    plate = cleanAndRead(img, contours)
+    plate,img = cleanAndRead(img, contours)
    
-    segment(plate)
+    segment(plate, img)
